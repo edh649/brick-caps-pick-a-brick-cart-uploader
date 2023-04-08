@@ -19,12 +19,39 @@ return browser.runtime.getURL("beasts/turtle.jpg");
 }
 }
 
+  
+  function logCookies(cookies) {
+    for (const cookie of cookies) {
+      console.log(cookie.value);
+    }
+  }
+  
+  
+
 /**
 * Insert the page-hiding CSS into the active tab,
 * then get the beast URL and
 * send a "beastify" message to the content script in the active tab.
 */
 function beastify(tabs) {
+    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
+        let tab = tabs[0]; // Safe to assume there will only be one result
+        console.log(tab.url);
+        let ur = new URL(tab.url)
+        console.log(ur.hostname)
+        
+        browser.cookies
+        .getAll({
+            name: 'gqauth'
+        })
+        .then(logCookies); ///BINGO!
+        // console.log(browser.cookies.getAll())
+        // console.log(browser.cookies.get({
+        //     url: ur.hostname,
+        //     name: 'gqauth'
+        // }))
+    }, console.error)
+    
 const url = beastNameToURL(e.target.textContent);
 browser.tabs.sendMessage(tabs[0].id, {
 command: "add",

@@ -1,24 +1,25 @@
 {
-
+    
     "manifest_version": 2,
     "name": "Borderify",
     "version": "1.0",
-  
+    
     "description": "Adds a red border to all webpages matching lego.com",
-  
+    
     "permissions": [
         "activeTab",
-        "cookies"
-      ],
-      "icons": {
+        "cookies",
+        "<all_urls>"
+    ],
+    "icons": {
         "48": "icon_32.png"
-      },
-      
-  "browser_action": {
-    "default_icon": "icon_32.png",
-    "default_title": "Beastify",
-    "default_popup": "popup/pop.html"
-  }
-  
+    },
+    
+    
+    "browser_action": {
+        "default_icon": "icon_32.png",
+        "default_title": "Beastify",
+        "default_popup": "popup/pop.html"
+    }
+    
 }
-  
