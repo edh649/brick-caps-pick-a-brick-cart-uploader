@@ -20,6 +20,5 @@
         "default_icon": "icon_32.png",
         "default_title": "Beastify",
         "default_popup": "popup/pop.html"
-    }
-    
+    }    
 }

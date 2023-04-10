@@ -4,96 +4,72 @@
 * the content script in the page.
 */
 function listenForClicks() {
-document.addEventListener("click", (e) => {
-/**
-* Given the name of a beast, get the URL to the corresponding image.
-*/
-function beastNameToURL(beastName) {
-switch (beastName) {
-case "Frog":
-return browser.runtime.getURL("beasts/frog.jpg");
-case "Snake":
-return browser.runtime.getURL("beasts/snake.jpg");
-case "Turtle":
-return browser.runtime.getURL("beasts/turtle.jpg");
-}
-}
-
-  
-  function logCookies(cookies) {
-    for (const cookie of cookies) {
-      console.log(cookie.value);
-    }
-  }
-  
-  
-
-/**
-* Insert the page-hiding CSS into the active tab,
-* then get the beast URL and
-* send a "beastify" message to the content script in the active tab.
-*/
-function beastify(tabs) {
-    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
-        let tab = tabs[0]; // Safe to assume there will only be one result
-        console.log(tab.url);
-        let ur = new URL(tab.url)
-        console.log(ur.hostname)
-        
+  document.addEventListener("click", (e) => {    
+    
+    
+    
+    /**
+    * Insert the page-hiding CSS into the active tab,
+    * then get the beast URL and
+    * send a "beastify" message to the content script in the active tab.
+    */
+    function insertSkus(bestseller) {
+      browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {        
         browser.cookies
         .getAll({
-            name: 'gqauth'
+          name: 'gqauth'
         })
-        .then(logCookies); ///BINGO!
-        // console.log(browser.cookies.getAll())
-        // console.log(browser.cookies.get({
-        //     url: ur.hostname,
-        //     name: 'gqauth'
-        // }))
-    }, console.error)
+        .then(cookies => {
+          console.log("sending add message")
+          browser.tabs.sendMessage(tabs[0].id, {
+            command: "add",
+            auth: cookies[0].value,
+            bestseller: bestseller
+          })});
+      }, console.error)
+      
+      
+    }
     
-const url = beastNameToURL(e.target.textContent);
-browser.tabs.sendMessage(tabs[0].id, {
-command: "add",
-beastURL: url
-});
-}
-
-/**
-* Remove the page-hiding CSS from the active tab,
-* send a "reset" message to the content script in the active tab.
-*/
-function reset(tabs) {
-browser.tabs.sendMessage(tabs[0].id, {
-command: "reset",
-});
-}
-
-/**
-* Just log the error to the console.
-*/
-function reportError(error) {
-console.error(`Could not beastify: ${error}`);
-}
-
-/**
-* Get the active tab,
-* then call "beastify()" or "reset()" as appropriate.
-*/
-if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
-// Ignore when click is not on a button within <div id="popup-content">.
-return;
-} 
-if (e.target.type === "reset") {
-browser.tabs.query({active: true, currentWindow: true})
-.then(reset)
-.catch(reportError);
-} else {
-browser.tabs.query({active: true, currentWindow: true})
-.then(beastify)
-.catch(reportError);
-}
-});
+    /**
+    * Remove the page-hiding CSS from the active tab,
+    * send a "reset" message to the content script in the active tab.
+    */
+    function reset(tabs) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        command: "reset",
+      });
+    }
+    
+    /**
+    * Just log the error to the console.
+    */
+    function reportError(error) {
+      console.error(`Could not beastify: ${error}`);
+    }
+    
+    /**
+    * Get the active tab,
+    * then call "beastify()" or "reset()" as appropriate.
+    */
+    if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
+      // Ignore when click is not on a button within <div id="popup-content">.
+      return;
+    } 
+    if (e.target.type === "reset") {
+      browser.tabs.query({active: true, currentWindow: true})
+      .then(reset)
+      .catch(reportError);
+    } else if (e.target.id = "insertBestseller") {
+      browser.tabs.query({active: true, currentWindow: true})
+      .then(insertSkus(true))
+      .catch(reportError);
+    } else if (e.target.id = "insertStandard") {
+      browser.tabs.query({active: true, currentWindow: true})
+      .then(insertSkus(false))
+      .catch(reportError);
+    }
+  });
 }
 
 /**
@@ -101,9 +77,9 @@ browser.tabs.query({active: true, currentWindow: true})
 * Display the popup's error message, and hide the normal UI.
 */
 function reportExecuteScriptError(error) {
-document.querySelector("#popup-content").classList.add("hidden");
-document.querySelector("#error-content").classList.remove("hidden");
-console.error(`Failed to execute beastify content script: ${error.message}`);
+  document.querySelector("#popup-content").classList.add("hidden");
+  document.querySelector("#error-content").classList.remove("hidden");
+  console.error(`Failed to execute beastify content script: ${error.message}`);
 }
 
 /**
