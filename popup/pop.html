@@ -7,9 +7,19 @@
 
   <body>
     <div id="popup-content">
+      <div>
+        <label>SKU</label><input type="text" id="skuInput">
+        <label>Qty</label><input type="text" id="quantityInput">
+        <label>£ Max (/unit)</label><input type="text" id="priceUnitMaxInput">
+      </div>
+      <button id="addItem">Add Item</button>
+      <hr/>
+      <div id="itemsContainer">
+      </div>
+      <button id="clearItems" class="bad">Clear Items</button>
+      <hr/>
       <button id="insertBestseller">Insert (Besteller)</button>
       <button id="insertStandard">Insert (Standard)</button>
-      <button type="reset">Reset</button>
     </div>
     <div id="error-content" class="hidden">
       <p>Can't beastify this web page.</p>

@@ -17,9 +17,18 @@ html, body {
     background-color: #E5F2F2;
   }
   
+  button.bad {
+    background-color: rgb(228, 96, 96);
+  }
+  
+  button.bad:hover {
+    background-color: rgb(175, 72, 72);
+  }
+  
   button:hover {
     background-color: #CFF2F2;
   }
+  
   
   button[type="reset"] {
     background-color: #FBFBC9;

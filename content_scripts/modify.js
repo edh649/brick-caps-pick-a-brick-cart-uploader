@@ -14,9 +14,15 @@
   * create and style an IMG node pointing to
   * that image, then insert the node into the document.
   */
-  function insertToCart(auth, bestseller) {
+  function insertToCart(auth, items, bestseller) {
     console.log("adding to cart");
     console.log(auth)
+    let itemsMapped = items.map(val => {
+      return {
+        "sku": String(val.SKU),
+        "quantity": Number.parseInt(val.qty)
+      }
+    });
     fetch('https://www.lego.com/api/graphql/AddToElementCart', {
       method: "POST",
       headers: {
@@ -28,29 +34,17 @@
         {
           "operationName": "AddToElementCart",
           "variables": {
-              "items": [
-                  {
-                      "sku": "6102580",
-                      "quantity": 30
-                  },
-                  
-                  {
-                    "sku": "6173168",
-                    "quantity": 30
-                },
-                  
-                {
-                  "sku": "6060803",
-                  "quantity": 30
-              }
-              ],
+              "items": itemsMapped,
               "cartType": bestseller ? 'pab' : 'bap'
           },
           "query": "mutation AddToElementCart($items: [ElementInput!]!, $cartType: CartType) {\n  addToElementCart(input: {items: $items, cartType: $cartType}) {\n    ...BrickCartData\n    ...MinifigureCartData\n    __typename\n  }\n}\n\nfragment BrickCartData on BrickCart {\n  id\n  type\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  lineItems {\n    ...LineItemData\n    __typename\n  }\n  subTotal {\n    formattedAmount\n    formattedValue\n    __typename\n  }\n  shippingMethod {\n    price {\n      formattedAmount\n      __typename\n    }\n    shippingRate {\n      formattedAmount\n      __typename\n    }\n    minimumFreeShippingAmount {\n      formattedAmount\n      formattedValue\n      __typename\n    }\n    isFree\n    __typename\n  }\n  __typename\n}\n\nfragment LineItemData on PABCartLineItem {\n  id\n  quantity\n  element {\n    id\n    name\n    __typename\n  }\n  price {\n    centAmount\n    currencyCode\n    __typename\n  }\n  elementVariant {\n    id\n    attributes {\n      designNumber\n      deliveryChannel\n      maxOrderQuantity\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureCartData on MinifigureCart {\n  id\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  minifigureData {\n    ...MinifigureDataTupleData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureDataTupleData on MinifigureDataTuple {\n  figureId\n  elements {\n    ...MinifigureLineItemData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureLineItemData on PABCartLineItem {\n  id\n  elementVariant {\n    id\n    attributes {\n      indexImageURL\n      backImageURL\n      isShort\n      __typename\n    }\n    __typename\n  }\n  metadata {\n    minifigureCategory\n    bamFigureId\n    __typename\n  }\n  __typename\n}"
       })
     }).then(resp => {
-      location.reload();
+      //here we need to read the response, find any over price, and remove them!
+      //ideally need some sort of feedback to the sidebar to say what was added and what was removed etc. (and at what price)
+      debugger
       console.log(resp.json());
+      // location.reload();
     }).catch(err => {
       console.log("Error:", err);
     })
@@ -65,7 +59,7 @@
     console.log(message)
     if (message.command === "add") {
       console.log("recieved add message")
-      insertToCart(message.auth, message.bestseller);
+      insertToCart(message.auth, message.items, message.bestseller);
     }
   });
 })();

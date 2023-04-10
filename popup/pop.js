@@ -1,4 +1,4 @@
-
+var items = [];
 /**
 * Listen for clicks on the buttons, and send the appropriate message to
 * the content script in the page.
@@ -6,13 +6,6 @@
 function listenForClicks() {
   document.addEventListener("click", (e) => {    
     
-    
-    
-    /**
-    * Insert the page-hiding CSS into the active tab,
-    * then get the beast URL and
-    * send a "beastify" message to the content script in the active tab.
-    */
     function insertSkus(bestseller) {
       browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {        
         browser.cookies
@@ -24,70 +17,81 @@ function listenForClicks() {
           browser.tabs.sendMessage(tabs[0].id, {
             command: "add",
             auth: cookies[0].value,
-            bestseller: bestseller
+            bestseller: bestseller,
+            items: items,
           })});
-      }, console.error)
+        }, console.error)
+      }
       
+      if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
+        // Ignore when click is not on a button within <div id="popup-content">.
+        return;
+      }
       
-    }
-    
-    /**
-    * Remove the page-hiding CSS from the active tab,
-    * send a "reset" message to the content script in the active tab.
-    */
-    function reset(tabs) {
-      browser.tabs.sendMessage(tabs[0].id, {
-        command: "reset",
-      });
-    }
-    
-    /**
-    * Just log the error to the console.
-    */
-    function reportError(error) {
-      console.error(`Could not beastify: ${error}`);
-    }
-    
-    /**
-    * Get the active tab,
-    * then call "beastify()" or "reset()" as appropriate.
-    */
-    if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
-      // Ignore when click is not on a button within <div id="popup-content">.
-      return;
-    } 
-    if (e.target.type === "reset") {
-      browser.tabs.query({active: true, currentWindow: true})
-      .then(reset)
-      .catch(reportError);
-    } else if (e.target.id = "insertBestseller") {
-      browser.tabs.query({active: true, currentWindow: true})
-      .then(insertSkus(true))
-      .catch(reportError);
-    } else if (e.target.id = "insertStandard") {
-      browser.tabs.query({active: true, currentWindow: true})
-      .then(insertSkus(false))
-      .catch(reportError);
-    }
-  });
-}
-
-/**
-* There was an error executing the script.
-* Display the popup's error message, and hide the normal UI.
-*/
-function reportExecuteScriptError(error) {
-  document.querySelector("#popup-content").classList.add("hidden");
-  document.querySelector("#error-content").classList.remove("hidden");
-  console.error(`Failed to execute beastify content script: ${error.message}`);
-}
-
-/**
-* When the popup loads, inject a content script into the active tab,
-* and add a click handler.
-* If we couldn't inject the script, handle the error.
-*/
-browser.tabs
-.executeScript({ file: "/content_scripts/modify.js" })
-.then(listenForClicks)
-.catch(reportExecuteScriptError);
+      console.log(e.target.id)
+      
+      switch (e.target.id) {
+        case "insertBestseller":
+        browser.tabs.query({active: true, currentWindow: true})
+        .then(insertSkus(true))
+        .catch(err => { console.error(`Error: ${error}`)});
+        break;
+        
+        case 'insertStandard':
+        browser.tabs.query({active: true, currentWindow: true})
+        .then(insertSkus(false))
+        .catch(err => { console.error(`Error: ${error}`)});
+        break;
+        
+        case 'addItem':
+          items.push({
+            SKU: document.getElementById('skuInput').value,
+            qty: document.getElementById('quantityInput').value,
+            maxPrice: document.getElementById('priceUnitMaxInput').value
+          });
+          loadItemsContainer();
+        break;
+        
+        case 'clearItems':
+          items = []
+          loadItemsContainer();
+          break;
+        
+        default:
+        console.log(`Unexpected button id ${e.target.id}`)
+        break;
+      }
+    });
+  }
+  
+  function loadItemsContainer() {
+    let container = document.getElementById('itemsContainer')
+    container.replaceChildren([])
+    items.forEach(item => {
+      const textContainer = document.createElement('p');
+      const line = document.createTextNode(item.SKU + " (" + item.qty + ")" + "[<£" + item.maxPrice + "]")
+      textContainer.appendChild(line)
+      container.appendChild(textContainer)
+    });
+  }
+  
+  /**
+  * There was an error executing the script.
+  * Display the popup's error message, and hide the normal UI.
+  */
+  function reportExecuteScriptError(error) {
+    document.querySelector("#popup-content").classList.add("hidden");
+    document.querySelector("#error-content").classList.remove("hidden");
+    console.error(`Failed to execute insert content script: ${error.message}`);
+  }
+  
+  /**
+  * When the popup loads, inject a content script into the active tab,
+  * and add a click handler.
+  * If we couldn't inject the script, handle the error.
+  */
+  browser.tabs
+  .executeScript({ file: "/content_scripts/modify.js" })
+  .then(listenForClicks)
+  .catch(reportExecuteScriptError);
+  
