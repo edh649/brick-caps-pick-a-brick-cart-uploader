@@ -40,11 +40,60 @@
           "query": "mutation AddToElementCart($items: [ElementInput!]!, $cartType: CartType) {\n  addToElementCart(input: {items: $items, cartType: $cartType}) {\n    ...BrickCartData\n    ...MinifigureCartData\n    __typename\n  }\n}\n\nfragment BrickCartData on BrickCart {\n  id\n  type\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  lineItems {\n    ...LineItemData\n    __typename\n  }\n  subTotal {\n    formattedAmount\n    formattedValue\n    __typename\n  }\n  shippingMethod {\n    price {\n      formattedAmount\n      __typename\n    }\n    shippingRate {\n      formattedAmount\n      __typename\n    }\n    minimumFreeShippingAmount {\n      formattedAmount\n      formattedValue\n      __typename\n    }\n    isFree\n    __typename\n  }\n  __typename\n}\n\nfragment LineItemData on PABCartLineItem {\n  id\n  quantity\n  element {\n    id\n    name\n    __typename\n  }\n  price {\n    centAmount\n    currencyCode\n    __typename\n  }\n  elementVariant {\n    id\n    attributes {\n      designNumber\n      deliveryChannel\n      maxOrderQuantity\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureCartData on MinifigureCart {\n  id\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  minifigureData {\n    ...MinifigureDataTupleData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureDataTupleData on MinifigureDataTuple {\n  figureId\n  elements {\n    ...MinifigureLineItemData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureLineItemData on PABCartLineItem {\n  id\n  elementVariant {\n    id\n    attributes {\n      indexImageURL\n      backImageURL\n      isShort\n      __typename\n    }\n    __typename\n  }\n  metadata {\n    minifigureCategory\n    bamFigureId\n    __typename\n  }\n  __typename\n}"
       })
     }).then(resp => {
-      //here we need to read the response, find any over price, and remove them!
-      //ideally need some sort of feedback to the sidebar to say what was added and what was removed etc. (and at what price)
-      debugger
-      console.log(resp.json());
-      // location.reload();
+      resp.json().then(response => {
+        let opLineItemIds = getOverpricedLineItemIds(items, response)
+        removeLineItemIdsFromCart(auth, opLineItemIds, bestseller)
+      })
+      location.reload();
+    }).catch(err => {
+      console.log("Error:", err);
+    })
+  }
+  
+  function getOverpricedLineItemIds(items, response)
+  {
+    debugger
+    let lineItems = response.data.addToElementCart.lineItems
+    
+    let toRemove = []
+    
+    items.forEach(item => {
+      
+      let relevantLineItem = lineItems.find(lineItem => {
+        return String(item.SKU) === String(lineItem.elementVariant.id)
+      })
+      if (!relevantLineItem) {
+        alert("Line item " + item.SKU + "not found in line item list?!")
+      }
+      else if (Number.parseInt(relevantLineItem.price.centAmount) > Number.parseInt(item.maxPrice)) {
+        console.log("adding " + item.SKU + " to remove list with line item id " + relevantLineItem.id)
+        toRemove.push(relevantLineItem.id)
+      }
+    })
+  }
+  
+  function removeLineItemIdsFromCart(auth, lineItemIds, bestseller)
+  {
+    console.log("removing from cart");
+    console.log(auth)
+    fetch('https://www.lego.com/api/graphql/RemoveFromElementCart', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": auth,
+        "x-locale": "en-GB"
+      },
+      body: JSON.stringify(
+        {
+          "operationName": "RemoveFromElementCart",
+          "variables": {
+              "lineItemIds": lineItemIds,
+              "cartType": bestseller ? 'pab' : 'bap'
+          },
+          "query": "mutation RemoveFromElementCart($lineItemIds: [String!]!, $cartType: CartType) {\n  removeFromElementCart(input: {lineItemIds: $lineItemIds, cartType: $cartType}) {\n    ...BrickCartData\n    ...MinifigureCartData\n    __typename\n  }\n}\n\nfragment BrickCartData on BrickCart {\n  id\n  type\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  lineItems {\n    ...LineItemData\n    __typename\n  }\n  subTotal {\n    formattedAmount\n    formattedValue\n    __typename\n  }\n  shippingMethod {\n    price {\n      formattedAmount\n      __typename\n    }\n    shippingRate {\n      formattedAmount\n      __typename\n    }\n    minimumFreeShippingAmount {\n      formattedAmount\n      formattedValue\n      __typename\n    }\n    isFree\n    __typename\n  }\n  __typename\n}\n\nfragment LineItemData on PABCartLineItem {\n  id\n  quantity\n  element {\n    id\n    name\n    __typename\n  }\n  price {\n    centAmount\n    currencyCode\n    __typename\n  }\n  elementVariant {\n    id\n    attributes {\n      designNumber\n      deliveryChannel\n      maxOrderQuantity\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureCartData on MinifigureCart {\n  id\n  taxedPrice {\n    totalGross {\n      formattedAmount\n      formattedValue\n      currencyCode\n      __typename\n    }\n    __typename\n  }\n  totalPrice {\n    formattedAmount\n    formattedValue\n    currencyCode\n    __typename\n  }\n  minifigureData {\n    ...MinifigureDataTupleData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureDataTupleData on MinifigureDataTuple {\n  figureId\n  elements {\n    ...MinifigureLineItemData\n    __typename\n  }\n  __typename\n}\n\nfragment MinifigureLineItemData on PABCartLineItem {\n  id\n  elementVariant {\n    id\n    attributes {\n      indexImageURL\n      backImageURL\n      isShort\n      __typename\n    }\n    __typename\n  }\n  metadata {\n    minifigureCategory\n    bamFigureId\n    __typename\n  }\n  __typename\n}"
+      })
+    }).then(resp => {
+      console.log("removed without error")
     }).catch(err => {
       console.log("Error:", err);
     })

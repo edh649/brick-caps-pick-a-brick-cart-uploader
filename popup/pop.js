@@ -44,8 +44,12 @@ function listenForClicks() {
         break;
         
         case 'addItem':
+          let sku = document.getElementById('skuInput').value
+          items = items.filter(item => {
+            return item.SKU !== sku
+          })
           items.push({
-            SKU: document.getElementById('skuInput').value,
+            SKU: sku,
             qty: document.getElementById('quantityInput').value,
             maxPrice: document.getElementById('priceUnitMaxInput').value
           });
@@ -69,7 +73,7 @@ function listenForClicks() {
     container.replaceChildren([])
     items.forEach(item => {
       const textContainer = document.createElement('p');
-      const line = document.createTextNode(item.SKU + " (" + item.qty + ")" + "[<£" + item.maxPrice + "]")
+      const line = document.createTextNode(item.SKU + " (" + item.qty + ")" + "[<£" + item.maxPrice/100 + "]")
       textContainer.appendChild(line)
       container.appendChild(textContainer)
     });
