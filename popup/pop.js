@@ -71,6 +71,10 @@ function listenForClicks() {
         case 'insertScript':
           insertScript()
           break;
+          
+        case 'loadCsv':
+          loadCSV()
+          break;
         
         default:
         console.log(`Unexpected button id ${e.target.id}`)
@@ -88,6 +92,49 @@ function listenForClicks() {
       textContainer.appendChild(line)
       container.appendChild(textContainer)
     });
+  }
+  
+  function loadCSV() {
+    insertIntoLog("Reading from CSV")
+    var reader = new FileReader();
+    let text = reader.readAsText(document.getElementById("csvFilePicker").files[0])
+    reader.onload = function (e) {
+      parseCSV(e.target.result)
+    }
+  }
+  
+  function parseCSV(fileString) {
+    insertIntoLog("Parsing CSV")
+    let buffer = "";
+    let objBuffer = [];
+    let line = 0;
+    for (let index = 0; index < fileString.length; index++) {
+      let char = fileString[index]
+      
+      if (char == ",") {
+        objBuffer.push(buffer);
+        buffer = "";
+      }
+      else if (char == "\n") {
+        line = line + 1;
+        objBuffer.push(buffer);
+        buffer = "";
+        if (line != 1) {
+          items.push({
+            SKU: objBuffer[0],
+            qty: objBuffer[1],
+            maxPrice: objBuffer[2]
+          });
+        }
+        objBuffer = []
+      }
+      else
+      {
+        buffer = buffer + fileString[index]
+      }
+    }
+    loadItemsContainer();
+    insertIntoLog("Imported CSV")
   }
   
   /**
