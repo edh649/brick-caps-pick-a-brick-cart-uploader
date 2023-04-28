@@ -22,5 +22,11 @@
         },
         "default_title": "BC-PAB-CU",
         "default_panel": "popup/pop.html"
-    }    
+    },
+        
+    "content_scripts": [
+        {    "matches": ["*://*.lego.com/*"],
+             "js": ["/content_scripts/modify.js"]
+        }
+    ]
 }

@@ -9,13 +9,17 @@
   }
   window.hasRun = true;
   
-  /**
-  * Given a URL to a beast image, remove all existing beasts, then
-  * create and style an IMG node pointing to
-  * that image, then insert the node into the document.
-  */
+  function sendMessageToSidebar(message)
+  {
+    browser.runtime.sendMessage({
+      command: "log",
+      message: message
+    });
+  }
+  
   function insertToCart(auth, items, bestseller) {
     console.log("adding to cart");
+    sendMessageToSidebar("Adding " + items.length + "items to cart");
     console.log(auth)
     let itemsMapped = items.map(val => {
       return {
@@ -44,36 +48,41 @@
         let opLineItemIds = getOverpricedLineItemIds(items, response)
         removeLineItemIdsFromCart(auth, opLineItemIds, bestseller)
       })
-      location.reload();
     }).catch(err => {
       console.log("Error:", err);
+      sendMessageToSidebar("Error:" + err);
     })
   }
   
   function getOverpricedLineItemIds(items, response)
   {
-    debugger
     let lineItems = response.data.addToElementCart.lineItems
     
     let toRemove = []
     
-    items.forEach(item => {
-      
+    items.forEach(item => {      
       let relevantLineItem = lineItems.find(lineItem => {
         return String(item.SKU) === String(lineItem.elementVariant.id)
       })
+      
+      let lineItemCent = Number.parseInt(relevantLineItem.price.centAmount) 
+      let maxPriceCent = Number.parseInt(item.maxPrice)
+      
       if (!relevantLineItem) {
-        alert("Line item " + item.SKU + "not found in line item list?!")
+        sendMessageToSidebar("Line item " + item.SKU + "not found in line item list?!")
       }
-      else if (Number.parseInt(relevantLineItem.price.centAmount) > Number.parseInt(item.maxPrice)) {
-        console.log("adding " + item.SKU + " to remove list with line item id " + relevantLineItem.id)
+      else if (lineItemCent > maxPriceCent) {
+        sendMessageToSidebar(item.SKU + " is overpriced (" + lineItemCent + " > " + maxPriceCent + "). Removing from cart")
         toRemove.push(relevantLineItem.id)
       }
     })
+    
+    return toRemove
   }
   
   function removeLineItemIdsFromCart(auth, lineItemIds, bestseller)
   {
+    sendMessageToSidebar("Removing " + lineItemIds.length + "items from cart")
     console.log("removing from cart");
     console.log(auth)
     fetch('https://www.lego.com/api/graphql/RemoveFromElementCart', {
@@ -94,15 +103,15 @@
       })
     }).then(resp => {
       console.log("removed without error")
+      sendMessageToSidebar("Removed without error")
+      location.reload();
     }).catch(err => {
       console.log("Error:", err);
+      sendMessageToSidebar("Error:" + err)
+      location.reload();
     })
   }
   
-  /**
-  * Listen for messages from the background script.
-  * Call "insertBeast()" or "removeExistingBeasts()".
-  */
   browser.runtime.onMessage.addListener((message) => {
     console.log("recieved message")
     console.log(message)

@@ -1,4 +1,5 @@
 var items = [];
+var logList = [];
 /**
 * Listen for clicks on the buttons, and send the appropriate message to
 * the content script in the page.
@@ -44,6 +45,7 @@ function listenForClicks() {
         break;
         
         case 'addItem':
+          insertIntoLog("Adding item to insert list");
           let sku = document.getElementById('skuInput').value
           items = items.filter(item => {
             return item.SKU !== sku
@@ -59,6 +61,15 @@ function listenForClicks() {
         case 'clearItems':
           items = []
           loadItemsContainer();
+          break;
+          
+        case 'clearLog':
+          logList = []
+          insertIntoLog("Cleared Log");
+          break;
+          
+        case 'insertScript':
+          insertScript()
           break;
         
         default:
@@ -94,8 +105,37 @@ function listenForClicks() {
   * and add a click handler.
   * If we couldn't inject the script, handle the error.
   */
-  browser.tabs
-  .executeScript({ file: "/content_scripts/modify.js" })
-  .then(listenForClicks)
-  .catch(reportExecuteScriptError);
+  function insertScript() {
+    insertIntoLog("Inserting script into webpage");
+    browser.tabs
+    .executeScript({ file: "/content_scripts/modify.js" })
+    .then(listenForClicks)
+    .catch(reportExecuteScriptError);
+  }
+  insertScript();
   
+  
+  function handleMessage(request, sender, sendResponse) {
+    if (request.command == "log")
+    {
+      console.log(`A content script sent a message: ${request.message}`);
+      insertIntoLog(request.message);
+    }
+  }
+  
+  
+  function insertIntoLog(message) {
+    logList.reverse()
+    logList.push(message)
+    logList.reverse()
+    let container = document.getElementById('log')
+    container.replaceChildren([])
+    logList.forEach(item => {
+      const textContainer = document.createElement('p');
+      const line = document.createTextNode(item)
+      textContainer.appendChild(line)
+      container.appendChild(textContainer)
+    });
+  }
+  
+  browser.runtime.onMessage.addListener(handleMessage);
